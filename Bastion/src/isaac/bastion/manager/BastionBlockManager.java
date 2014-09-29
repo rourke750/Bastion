@@ -63,10 +63,19 @@ public class BastionBlockManager
 	public void erodeFromPlace(Block orrigin, Set<Block> result, String player, Set<BastionBlock> blocking){
 		if(onCooldown(player)) return;
 		
-		List<BastionBlock> ordered = new LinkedList<BastionBlock>(blocking);
-		
-		BastionBlock toErode = ordered.get(generator.nextInt(ordered.size()));
-		toErode.erode(toErode.erosionFromBlock());
+		if(Bastion.getConfigManager().getBastionBlocksToErode() < 0){
+			for (BastionBlock bastion : blocking){
+				bastion.erode(bastion.erosionFromBlock());
+			}
+		} else{
+			List<BastionBlock> ordered = new LinkedList<BastionBlock>(blocking);
+			for(int i = 0;i < ordered.size() && (i < Bastion.getConfigManager().getBastionBlocksToErode());++i){
+				int erode = generator.nextInt(ordered.size()); 
+				BastionBlock toErode = ordered.get(erode);
+				toErode.erode(toErode.erosionFromBlock());
+				ordered.remove(erode);
+			}
+		}
 	}
 	
 	public void erodeFromTeleoprt(Location loc, String player, Set<BastionBlock> blocking){
@@ -112,7 +121,7 @@ public class BastionBlockManager
 			PlayerReinforcement reinforcement = (PlayerReinforcement) Citadel.getReinforcementManager().
 			getReinforcement(orrigin);
 			if(reinforcement instanceof PlayerReinforcement)
-				accessors.add(reinforcement.getOwnerName());
+				accessors.add(reinforcement.getOwner().getFounder());
 			
 			for(BastionBlock bastion: this.getBlockingBastions(orrigin.getLocation()))
 				accessors.add(bastion.getOwner());
@@ -328,7 +337,7 @@ public class BastionBlockManager
 	public void handleBlockBreakEvent(BlockBreakEvent event) {
 		BastionBlock bastion = set.getBastionBlock(event.getBlock().getLocation());
 		if (bastion != null)
-			bastion.silentClose();
+			bastion.close();
 	}
 	public void handleEnderPearlLanded(PlayerTeleportEvent event) {
 		if (!Bastion.getConfigManager().getEnderPearlsBlocked()) return; //don't block if the feature isn't enabled.
